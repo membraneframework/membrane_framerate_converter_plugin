@@ -1,7 +1,9 @@
 defmodule Membrane.FramerateConverter do
   @moduledoc """
-  TODO Documentation
-  - pts must be in buffers metadata
+  Element converts video to target constant frame rate, by dropping and duplicating frames as necessary
+  Input video may have constant or variable frame rate.
+  Element expects each frame to be received in separate buffer.
+  Additionally, presentation timestamps must be passed in each buffer's metadata.
   """
   use Membrane.Filter
   use Bunch
@@ -12,11 +14,10 @@ defmodule Membrane.FramerateConverter do
   require Membrane.Logger
 
   def_options framerate: [
-                # TODO framerate format
                 spec: Tuple,
                 default: {30, 1},
                 description: """
-                target framerate
+                Target framerate.
                 """
               ]
 
@@ -27,7 +28,6 @@ defmodule Membrane.FramerateConverter do
     caps: {Raw, aligned: true},
     demand_unit: :buffers
 
-  # TODO
   @impl true
   def handle_init(%__MODULE__{} = options) do
     state =
@@ -128,7 +128,6 @@ defmodule Membrane.FramerateConverter do
     end
   end
 
-  # TODO send last frame?
   @impl true
   def handle_end_of_stream(:input, _ctx, state) do
     {{:ok, end_of_stream: :output, notify: {:end_of_stream, :input}}, state}
