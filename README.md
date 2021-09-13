@@ -4,7 +4,7 @@
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_framerate_converter_plugin)
 [![CircleCI](https://circleci.com/gh/membraneframework/membrane_framerate_converter_plugin.svg?style=svg)](https://circleci.com/gh/membraneframework/membrane_framerate_converter_plugin)
 
-Plugin providing element for converting framerate of raw video stream.
+Plugin providing element for converting frame rate of raw video stream.
 
 It is part of [Membrane Multimedia Framework](https://membraneframework.org).
 
@@ -32,12 +32,12 @@ Example converting h264 video from 10 to 2 fps.
 ```elixir
 defmodule Pipeline do
   use Membrane.Pipeline
+
   alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
   alias Membrane.File.{Sink, Source}
 
   @impl true
   def handle_init(filename) do
-
     children =%{
         file: %Source{chunk_size: 40_960, location: filename},
         parser: %Parser{framerate: {10, 1}},

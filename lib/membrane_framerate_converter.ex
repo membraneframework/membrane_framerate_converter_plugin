@@ -5,8 +5,9 @@ defmodule Membrane.FramerateConverter do
   Element expects each frame to be received in separate buffer.
   Additionally, presentation timestamps must be passed in each buffer's metadata.
   """
-  use Membrane.Filter
+
   use Bunch
+  use Membrane.Filter
 
   alias Membrane.Buffer
   alias Membrane.Caps.Video.Raw
@@ -14,7 +15,7 @@ defmodule Membrane.FramerateConverter do
   require Membrane.Logger
 
   def_options framerate: [
-                spec: Tuple,
+                spec: tuple(),
                 default: {30, 1},
                 description: """
                 Target framerate.
@@ -48,18 +49,13 @@ defmodule Membrane.FramerateConverter do
   end
 
   @impl true
-  def handle_prepared_to_playing(_ctx, state) do
-    {:ok, state}
-  end
-
-  @impl true
   def handle_process(
         :input,
         %{payload: payload, metadata: metadata} = buffer,
         _ctx,
         %{last_payload: nil} = state
       ) do
-    if not Map.has_key?(metadata, :pts), do: raise("Cannot cut stream without pts")
+    unless Map.has_key?(metadata, :pts), do: raise("cannot cut stream without pts")
 
     state = %{
       state
@@ -68,7 +64,7 @@ defmodule Membrane.FramerateConverter do
         last_payload: payload
     }
 
-    {{:ok, buffer: {:output, buffer}}, bump_target_pts(state)}
+    {{:ok, [buffer: {:output, buffer}, redemand: :output]}, bump_target_pts(state)}
   end
 
   @impl true
@@ -78,7 +74,7 @@ defmodule Membrane.FramerateConverter do
         _ctx,
         %{last_payload: _last_payload} = state
       ) do
-    if not Map.has_key?(metadata, :pts), do: raise("Cannot cut stream without pts")
+    unless Map.has_key?(metadata, :pts), do: raise("cannot cut stream without pts")
 
     {buffers, state} = create_new_frames(metadata, payload, state)
     {{:ok, [buffer: {:output, buffers}, redemand: :output]}, state}
@@ -111,7 +107,7 @@ defmodule Membrane.FramerateConverter do
       dist_right = metadata.pts - state.target_pts
       dist_left = state.target_pts - state.last_metadata.pts
 
-      if dist_left <= dist_right do
+      if Ratio.lte?(dist_left, dist_right) do
         buffer = %Buffer{
           payload: state.last_payload,
           metadata: %{state.last_metadata | pts: state.target_pts}
@@ -120,7 +116,10 @@ defmodule Membrane.FramerateConverter do
         state = bump_target_pts(state)
         create_new_frames(metadata, payload, state, [buffer | buffers])
       else
-        buffer = %Buffer{payload: payload, metadata: %{metadata | pts: state.target_pts}}
+        buffer = %Buffer{
+          payload: payload,
+          metadata: %{metadata | pts: state.target_pts}
+        }
 
         state = bump_target_pts(state)
         create_new_frames(metadata, payload, state, [buffer | buffers])
@@ -130,6 +129,6 @@ defmodule Membrane.FramerateConverter do
 
   @impl true
   def handle_end_of_stream(:input, _ctx, state) do
-    {{:ok, end_of_stream: :output, notify: {:end_of_stream, :input}}, state}
+    {{:ok, end_of_stream: :output}, state}
   end
 end

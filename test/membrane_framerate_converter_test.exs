@@ -8,9 +8,10 @@ defmodule Membrane.FramerateConverterTest do
 
   import Membrane.Testing.Assertions
 
-  alias Membrane.Testing.Pipeline
-  alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
   alias Membrane.File.{Sink, Source}
+  alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
+  alias Membrane.Testing.Pipeline
+
   require Membrane.Logger
 
   @testsrc Path.expand("fixtures/testsrc_2s.h264", __DIR__)
@@ -34,7 +35,7 @@ defmodule Membrane.FramerateConverterTest do
     assert a == b
   end
 
-  describe "framreate converter should convert" do
+  describe "FramerateConverter should convert" do
     defp perform_test(elements) do
       pipeline_options = %Pipeline.Options{elements: elements}
       assert {:ok, pid} = Pipeline.start_link(pipeline_options)
