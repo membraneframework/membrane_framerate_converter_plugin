@@ -60,15 +60,47 @@ defmodule Membrane.FramerateConverterTest do
       perform_test(elements)
     end
 
-    test "video correctly" do
-      output_path = prepare_output("out.yuv")
-      reference_file = expand_path("reference-testsrc_2s.yuv")
+    test "video to the same frame rate correctly" do
+      output_path = prepare_output("out_2_fps.yuv")
+      reference_file = expand_path("reference-testsrc_2_fps.yuv")
+
+      elements = [
+        file: %Source{chunk_size: 40_960, location: @testsrc},
+        parser: %Parser{framerate: {5, 1}},
+        decoder: Decoder,
+        converter: %Membrane.FramerateConverter{framerate: {2, 1}},
+        sink: %Sink{location: output_path}
+      ]
+
+      perform_test(elements)
+      assert_files_equal(output_path, reference_file)
+    end
+
+    test "video to lower frame rate correctly" do
+      output_path = prepare_output("out_5_fps.yuv")
+      reference_file = expand_path("reference-testsrc_5_fps.yuv")
 
       elements = [
         file: %Source{chunk_size: 40_960, location: @testsrc},
         parser: %Parser{framerate: {5, 1}},
         decoder: Decoder,
         converter: %Membrane.FramerateConverter{framerate: {5, 1}},
+        sink: %Sink{location: output_path}
+      ]
+
+      perform_test(elements)
+      assert_files_equal(output_path, reference_file)
+    end
+
+    test "video to higher frame rate correctly" do
+      output_path = prepare_output("out_15_fps.yuv")
+      reference_file = expand_path("reference-testsrc_15_fps.yuv")
+
+      elements = [
+        file: %Source{chunk_size: 40_960, location: @testsrc},
+        parser: %Parser{framerate: {5, 1}},
+        decoder: Decoder,
+        converter: %Membrane.FramerateConverter{framerate: {15, 1}},
         sink: %Sink{location: output_path}
       ]
 
