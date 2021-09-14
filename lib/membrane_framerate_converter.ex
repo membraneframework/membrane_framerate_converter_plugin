@@ -1,6 +1,6 @@
 defmodule Membrane.FramerateConverter do
   @moduledoc """
-  Element converts video to target constant frame rate, by dropping and duplicating frames as necessary
+  Element converts video to target constant frame rate, by dropping and duplicating frames as necessary.
   Input video may have constant or variable frame rate.
   Element expects each frame to be received in separate buffer.
   Additionally, presentation timestamps must be passed in each buffer's metadata.
