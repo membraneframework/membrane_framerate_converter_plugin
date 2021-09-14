@@ -72,7 +72,7 @@ defmodule Membrane.FramerateConverter do
         :input,
         %{payload: payload, metadata: metadata},
         _ctx,
-        %{last_payload: _last_payload} = state
+        state
       ) do
     unless Map.has_key?(metadata, :pts), do: raise("cannot cut stream without pts")
 
@@ -85,9 +85,8 @@ defmodule Membrane.FramerateConverter do
     {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
   end
 
-  defp bump_target_pts(state) do
+  defp bump_target_pts(%{target_pts: pts, framerate: {num, denom}} = state) do
     use Ratio
-    %{target_pts: pts, framerate: {num, denom}} = state
     target_pts = pts + Ratio.new(denom * Membrane.Time.second(), num)
     %{state | target_pts: target_pts}
   end

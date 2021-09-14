@@ -38,7 +38,7 @@ defmodule Pipeline do
 
   @impl true
   def handle_init(filename) do
-    children =%{
+    children = %{
         file: %Source{chunk_size: 40_960, location: filename},
         parser: %Parser{framerate: {10, 1}},
         decoder: Decoder,
