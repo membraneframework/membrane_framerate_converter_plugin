@@ -82,7 +82,7 @@ defmodule Membrane.FramerateConverter do
 
   @impl true
   def handle_caps(:input, caps, _context, %{framerate: framerate} = state) do
-    {{:ok, caps: {:output, %{caps | framerate: framerate}}, redemand: :output}, state}
+    {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
   end
 
   defp bump_target_pts(state) do
