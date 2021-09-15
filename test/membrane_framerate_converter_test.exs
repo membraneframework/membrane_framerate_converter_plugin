@@ -72,7 +72,7 @@ defmodule Membrane.FramerateConverterTest do
         file: %Source{chunk_size: 40_960, location: @fps_test_file},
         parser: %Parser{framerate: @fps_file_framerate},
         decoder: Decoder,
-        converter: %Membrane.FramerateConverter{framerate: {2, 1}},
+        converter: %Membrane.FramerateConverter{framerate: {30_000, 1001}},
         encoder: Encoder,
         sink: %Sink{location: output_path}
       ]
@@ -90,6 +90,14 @@ defmodule Membrane.FramerateConverterTest do
 
     test "convert video to higher frame rate correctly" do
       perform_fps_test("out_15_fps.yuv", "reference-testsrc_15_fps.yuv", {15, 1})
+    end
+
+    test "convert video to the complicated frame rate correctly" do
+      perform_fps_test(
+        "out_complicated_fps.yuv",
+        "reference-testsrc_complicated_fps.yuv",
+        {30_000, 1001}
+      )
     end
 
     test "append correct timestamps" do

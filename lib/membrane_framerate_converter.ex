@@ -15,7 +15,7 @@ defmodule Membrane.FramerateConverter do
   require Membrane.Logger
 
   def_options framerate: [
-                spec: tuple(),
+                spec: {pos_integer(), pos_integer()},
                 default: {30, 1},
                 description: """
                 Target framerate.
@@ -48,6 +48,11 @@ defmodule Membrane.FramerateConverter do
     {{:ok, demand: {:input, size}}, state}
   end
 
+  def handle_process(:input, %{metadata: metadata}, _ctx, _state)
+      when not is_map_key(metadata, :pts) do
+    raise("cannot adjust framerate in stream without pts")
+  end
+
   @impl true
   def handle_process(
         :input,
@@ -55,27 +60,15 @@ defmodule Membrane.FramerateConverter do
         _ctx,
         %{last_payload: nil} = state
       ) do
-    unless Map.has_key?(metadata, :pts), do: raise("cannot cut stream without pts")
+    state =
+      %{state | target_pts: metadata.pts, last_metadata: metadata, last_payload: payload}
+      |> bump_target_pts()
 
-    state = %{
-      state
-      | target_pts: metadata.pts,
-        last_metadata: metadata,
-        last_payload: payload
-    }
-
-    {{:ok, [buffer: {:output, buffer}, redemand: :output]}, bump_target_pts(state)}
+    {{:ok, buffer: {:output, buffer}, redemand: :output}, state}
   end
 
   @impl true
-  def handle_process(
-        :input,
-        %{payload: payload, metadata: metadata},
-        _ctx,
-        state
-      ) do
-    unless Map.has_key?(metadata, :pts), do: raise("cannot cut stream without pts")
-
+  def handle_process(:input, %{payload: payload, metadata: metadata}, _ctx, state) do
     {buffers, state} = create_new_frames(metadata, payload, state)
     {{:ok, [buffer: {:output, buffers}, redemand: :output]}, state}
   end
@@ -106,28 +99,21 @@ defmodule Membrane.FramerateConverter do
       dist_right = metadata.pts - state.target_pts
       dist_left = state.target_pts - state.last_metadata.pts
 
-      if Ratio.lte?(dist_left, dist_right) do
-        buffer = %Buffer{
-          payload: state.last_payload,
-          metadata: %{state.last_metadata | pts: state.target_pts}
-        }
+      buffer =
+        if Ratio.lte?(dist_left, dist_right) do
+          %Buffer{
+            payload: state.last_payload,
+            metadata: %{state.last_metadata | pts: state.target_pts}
+          }
+        else
+          %Buffer{
+            payload: payload,
+            metadata: %{metadata | pts: state.target_pts}
+          }
+        end
 
-        state = bump_target_pts(state)
-        create_new_frames(metadata, payload, state, [buffer | buffers])
-      else
-        buffer = %Buffer{
-          payload: payload,
-          metadata: %{metadata | pts: state.target_pts}
-        }
-
-        state = bump_target_pts(state)
-        create_new_frames(metadata, payload, state, [buffer | buffers])
-      end
+      state = bump_target_pts(state)
+      create_new_frames(metadata, payload, state, [buffer | buffers])
     end
-  end
-
-  @impl true
-  def handle_end_of_stream(:input, _ctx, state) do
-    {{:ok, end_of_stream: :output}, state}
   end
 end
