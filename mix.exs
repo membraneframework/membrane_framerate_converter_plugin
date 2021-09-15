@@ -1,12 +1,12 @@
-defmodule Membrane.FramerateConverter.Mixfile do
+defmodule Membrane.Template.Mixfile do
   use Mix.Project
 
   @version "0.1.0"
-  @github_url "https://github.com/membraneframework/membrane_framerate_converter_plugin"
+  @github_url "https://github.com/membraneframework/membrane_template_plugin"
 
   def project do
     [
-      app: :membrane_framerate_converter_plugin,
+      app: :membrane_template_plugin,
       version: @version,
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -14,11 +14,11 @@ defmodule Membrane.FramerateConverter.Mixfile do
       deps: deps(),
 
       # hex
-      description: "Plugin for converting framerate of raw video",
+      description: "Template Plugin for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane Framerate Converter plugin",
+      name: "Membrane Template plugin",
       source_url: @github_url,
       homepage_url: "https://membraneframework.org",
       docs: docs()
@@ -37,14 +37,9 @@ defmodule Membrane.FramerateConverter.Mixfile do
   defp deps do
     [
       {:membrane_core, "~> 0.7.0"},
-      {:membrane_caps_video_raw, "~> 0.1.0"},
-      {:bunch, "~> 1.3"},
-      {:ratio, "~> 2.4.2"},
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
-      {:credo, "~> 1.5", only: :dev, runtime: false},
-      {:membrane_file_plugin, "~> 0.6.0", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.12.0", only: :test}
+      {:credo, "~> 1.5", only: :dev, runtime: false}
     ]
   end
 
@@ -64,7 +59,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
       main: "readme",
       extras: ["README.md", "LICENSE"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.FramerateConverter]
+      nest_modules_by_prefix: [Membrane.Template]
     ]
   end
 end
