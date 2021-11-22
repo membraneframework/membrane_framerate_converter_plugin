@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_framerate_converter_plugin` to 
 ```elixir
 def deps do
   [
-    {:membrane_framerate_converter_plugin, "~> 0.1.0"}
+    {:membrane_framerate_converter_plugin, "~> 0.2.0"}
   ]
 end
 ```
