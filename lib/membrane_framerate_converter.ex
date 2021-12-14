@@ -98,17 +98,18 @@ defmodule Membrane.FramerateConverter do
     else
       dist_right = metadata.pts - state.target_pts
       dist_left = state.target_pts - state.last_metadata.pts
+      truncated = Ratio.trunc(state.target_pts)
 
       buffer =
         if Ratio.lte?(dist_left, dist_right) do
           %Buffer{
             payload: state.last_payload,
-            metadata: %{state.last_metadata | pts: state.target_pts}
+            metadata: %{state.last_metadata | pts: truncated}
           }
         else
           %Buffer{
             payload: payload,
-            metadata: %{metadata | pts: state.target_pts}
+            metadata: %{metadata | pts: truncated}
           }
         end
 
