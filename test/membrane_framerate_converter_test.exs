@@ -9,7 +9,7 @@ defmodule Membrane.FramerateConverterTest do
   import Membrane.Testing.Assertions
 
   alias Membrane.File.{Sink, Source}
-  alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
+  alias Membrane.H264.FFmpeg.{Decoder, Encoder, Parser}
   alias Membrane.Testing
   alias Membrane.Testing.Pipeline
 
@@ -121,7 +121,7 @@ defmodule Membrane.FramerateConverterTest do
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
         assert_sink_buffer(pid, :sink, %Membrane.Buffer{metadata: metadata})
-        assert Ratio.mult(i, target_frame_duration) == metadata.pts
+        assert Ratio.mult(i, target_frame_duration) |> Ratio.trunc() == metadata.pts
       end)
 
       Testing.Pipeline.stop_and_terminate(pid, blocking?: true)
