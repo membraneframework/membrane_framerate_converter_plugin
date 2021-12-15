@@ -9,7 +9,7 @@ defmodule Membrane.FramerateConverterTest do
   import Membrane.Testing.Assertions
 
   alias Membrane.File.{Sink, Source}
-  alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
+  alias Membrane.H264.FFmpeg.{Decoder, Encoder, Parser}
   alias Membrane.Testing
   alias Membrane.Testing.Pipeline
 
