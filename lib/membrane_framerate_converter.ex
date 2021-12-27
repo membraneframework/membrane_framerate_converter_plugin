@@ -4,11 +4,6 @@ defmodule Membrane.FramerateConverter do
   Input video may have constant or variable frame rate.
   Element expects each frame to be received in separate buffer.
   Additionally, presentation timestamps must be passed in each buffer's `pts` fields.
-
-  It is worth noting that the Framerate Converter output video duration may differ slightly from the original duration.
-  In particular, it will not generate timestamps bigger than the last timestamp in the input video -
-  e.g 2 seconds video in 5 fps (having 10 frames total) after conversion to 15 fps will have 28 frames
-  - as the 1.9(3)s and 1.8(6)s timestamps exceed last timestamp of the input video.
   """
 
   use Bunch
@@ -40,6 +35,7 @@ defmodule Membrane.FramerateConverter do
       |> Map.from_struct()
       |> Map.merge(%{
         last_buffer: nil,
+        input_framerate: {0, 1},
         target_pts: 0,
         exact_target_pts: 0
       })
@@ -73,7 +69,46 @@ defmodule Membrane.FramerateConverter do
 
   @impl true
   def handle_caps(:input, caps, _context, %{framerate: framerate} = state) do
+    state = %{state | input_framerate: caps.framerate}
+
     {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
+  end
+
+  @impl true
+  def handle_end_of_stream(:input, _ctx, %{input_framerate: {0, _denom}} = state) do
+    {{:ok, end_of_stream: :output}, state}
+  end
+
+  def handle_end_of_stream(:input, _ctx, %{last_buffer: nil} = state) do
+    {{:ok, end_of_stream: :output}, state}
+  end
+
+  @impl true
+  def handle_end_of_stream(
+        :input,
+        _ctx,
+        %{last_buffer: last_buffer} = state
+      ) do
+    input_frame_duration = get_frame_duration(state.input_framerate)
+    output_frame_duration = get_frame_duration(state.framerate)
+    # calculate last target timestamp so that the output video duration is closest to original
+    best_last_timestamp = last_buffer.pts + input_frame_duration - div(output_frame_duration, 2)
+    buffers = fill_to_last_timestamp(best_last_timestamp, state)
+    {{:ok, [buffer: {:output, buffers}, end_of_stream: :output]}, state}
+  end
+
+  defp get_frame_duration({num, denom}) do
+    round(Membrane.Time.second() * denom / num)
+  end
+
+  defp fill_to_last_timestamp(last_timestamp, state, buffers \\ []) do
+    if state.target_pts > last_timestamp do
+      Enum.reverse(buffers)
+    else
+      new_buffer = %{state.last_buffer | pts: state.target_pts}
+      state = bump_target_pts(state)
+      fill_to_last_timestamp(last_timestamp, state, [new_buffer | buffers])
+    end
   end
 
   defp put_first_buffer(first_buffer, state) do
@@ -93,20 +128,17 @@ defmodule Membrane.FramerateConverter do
   end
 
   defp create_new_frames(input_buffer, state, buffers \\ []) do
-    use Ratio
-
-    if Ratio.gt?(state.target_pts, input_buffer.pts) do
+    if state.target_pts > input_buffer.pts do
       state = %{state | last_buffer: input_buffer}
 
       {Enum.reverse(buffers), state}
     else
       last_buffer = state.last_buffer
-
       dist_right = input_buffer.pts - state.target_pts
       dist_left = state.target_pts - last_buffer.pts
 
       new_buffer =
-        if Ratio.lte?(dist_left, dist_right) do
+        if dist_left <= dist_right do
           %{last_buffer | pts: state.target_pts}
         else
           %{input_buffer | pts: state.target_pts}

@@ -44,7 +44,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:credo, "~> 1.5", only: :dev, runtime: false},
       {:membrane_file_plugin, "~> 0.7.0", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.15.0", only: :test}
+      {:membrane_h264_ffmpeg_plugin, "~> 0.16.3", only: :test}
     ]
   end
 

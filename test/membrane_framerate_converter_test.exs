@@ -81,10 +81,10 @@ defmodule Membrane.FramerateConverterTest do
 
       perform_general_test(elements)
       output_frames = count_frames(output_path)
-      assert output_frames = target_frame_count
+      assert output_frames == target_frame_count
     end
 
-    test "convert video with gifven pts" do
+    test "convert video with given pts" do
       output_path = prepare_output("out.h264")
 
       elements = [
@@ -108,11 +108,11 @@ defmodule Membrane.FramerateConverterTest do
     end
 
     test "convert video to higher frame rate correctly" do
-      perform_fps_test("out_15_fps.h264", 28, {15, 1})
+      perform_fps_test("out_15_fps.h264", 30, {15, 1})
     end
 
     test "convert video to the complicated frame rate correctly" do
-      perform_fps_test("out_complicated_fps.h264", 54, {30_000, 1001})
+      perform_fps_test("out_complicated_fps.h264", 60, {30_000, 1001})
     end
 
     test "append correct timestamps" do
