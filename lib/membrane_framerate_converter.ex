@@ -83,22 +83,29 @@ defmodule Membrane.FramerateConverter do
     {{:ok, end_of_stream: :output}, state}
   end
 
-  @impl true
   def handle_end_of_stream(
         :input,
         _ctx,
         %{last_buffer: last_buffer} = state
       ) do
+    use Ratio
     input_frame_duration = get_frame_duration(state.input_framerate)
     output_frame_duration = get_frame_duration(state.framerate)
-    # calculate last target timestamp so that the output video duration is closest to original
-    best_last_timestamp = last_buffer.pts + input_frame_duration - div(output_frame_duration, 2)
+    input_video_duration = last_buffer.pts + input_frame_duration
+
+    # calculate last target timestamp so that the output video duration is closest to original:
+    # ideal last timestamp would be `input_video_duration - output_frame_duration`.
+    # Target timestamps repeat every output_frame_duration.
+    # To be the closest to the ideal last timestamp, last target timestamp must fall between
+    # ideal_last_timestamp - output_frame_duration/2 and ideal_last_timestamp + output_frame_duration/2.
+    # That means that last timestamp must not be greater than `input_video_duration - output_frame_duration/2`
+    best_last_timestamp = Ratio.floor(input_video_duration - output_frame_duration / 2)
     buffers = fill_to_last_timestamp(best_last_timestamp, state)
     {{:ok, [buffer: {:output, buffers}, end_of_stream: :output]}, state}
   end
 
   defp get_frame_duration({num, denom}) do
-    round(Membrane.Time.second() * denom / num)
+    Ratio.new(denom * Membrane.Time.second(), num)
   end
 
   defp fill_to_last_timestamp(last_timestamp, state, buffers \\ []) do
@@ -120,9 +127,9 @@ defmodule Membrane.FramerateConverter do
     }
   end
 
-  defp bump_target_pts(%{exact_target_pts: exact_pts, framerate: {num, denom}} = state) do
+  defp bump_target_pts(%{exact_target_pts: exact_pts, framerate: framerate} = state) do
     use Ratio
-    next_exact_pts = exact_pts + Ratio.new(denom * Membrane.Time.second(), num)
+    next_exact_pts = exact_pts + get_frame_duration(framerate)
     next_target_pts = Ratio.floor(next_exact_pts)
     %{state | target_pts: next_target_pts, exact_target_pts: next_exact_pts}
   end
