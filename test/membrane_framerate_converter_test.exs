@@ -33,10 +33,28 @@ defmodule Membrane.FramerateConverterTest do
     output_path
   end
 
-  defp assert_files_equal(file_a, file_b) do
-    assert {:ok, a} = File.read(file_a)
-    assert {:ok, b} = File.read(file_b)
-    assert a == b
+  defp count_frames(video_path) do
+    with {result_str, 0} <-
+           System.cmd(
+             "ffprobe",
+             [
+               # set logging level
+               "-v",
+               "error",
+               # report number of frames
+               "-count_frames",
+               # show information only about number of frames
+               "-show_entries",
+               "stream=nb_read_frames",
+               # set output format (hide description and only show value)
+               "-of",
+               "csv=p=0",
+               video_path
+             ]
+           ),
+         {frames, _rest} <- Integer.parse(result_str) do
+      frames
+    end
   end
 
   describe "FramerateConverter should" do
@@ -49,20 +67,21 @@ defmodule Membrane.FramerateConverterTest do
       Pipeline.stop_and_terminate(pid, blocking?: true)
     end
 
-    defp perform_fps_test(output_filename, reference_filename, target_framerate) do
+    defp perform_fps_test(output_filename, target_frame_count, target_framerate) do
       output_path = prepare_output(output_filename)
-      reference_file = expand_path(reference_filename)
 
       elements = [
         file: %Source{chunk_size: 40_960, location: @fps_test_file},
         parser: %Parser{framerate: @fps_file_framerate},
         decoder: Decoder,
         converter: %Membrane.FramerateConverter{framerate: target_framerate},
+        encoder: Encoder,
         sink: %Sink{location: output_path}
       ]
 
       perform_general_test(elements)
-      assert_files_equal(output_path, reference_file)
+      output_frames = count_frames(output_path)
+      assert output_frames == target_frame_count
     end
 
     test "convert video with given pts" do
@@ -81,23 +100,19 @@ defmodule Membrane.FramerateConverterTest do
     end
 
     test "convert video to the lower frame rate correctly" do
-      perform_fps_test("out_2_fps.yuv", "reference-testsrc_2_fps.yuv", {2, 1})
+      perform_fps_test("out_2_fps.h264", 4, {2, 1})
     end
 
     test "convert video to same frame rate correctly" do
-      perform_fps_test("out_5_fps.yuv", "reference-testsrc_5_fps.yuv", {5, 1})
+      perform_fps_test("out_5_fps.h264", 10, {5, 1})
     end
 
     test "convert video to higher frame rate correctly" do
-      perform_fps_test("out_15_fps.yuv", "reference-testsrc_15_fps.yuv", {15, 1})
+      perform_fps_test("out_15_fps.h264", 30, {15, 1})
     end
 
     test "convert video to the complicated frame rate correctly" do
-      perform_fps_test(
-        "out_complicated_fps.yuv",
-        "reference-testsrc_complicated_fps.yuv",
-        {30_000, 1001}
-      )
+      perform_fps_test("out_complicated_fps.h264", 60, {30_000, 1001})
     end
 
     test "append correct timestamps" do
@@ -120,8 +135,9 @@ defmodule Membrane.FramerateConverterTest do
 
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
-        assert_sink_buffer(pid, :sink, %Membrane.Buffer{metadata: metadata})
-        assert Ratio.mult(i, target_frame_duration) |> Ratio.trunc() == metadata.pts
+        expected_pts = i |> Ratio.mult(target_frame_duration) |> Ratio.floor()
+        assert_sink_buffer(pid, :sink, %Membrane.Buffer{metadata: metadata, pts: pts})
+        assert expected_pts == pts
       end)
 
       Testing.Pipeline.stop_and_terminate(pid, blocking?: true)
