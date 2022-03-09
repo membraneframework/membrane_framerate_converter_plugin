@@ -9,7 +9,7 @@ defmodule Membrane.FramerateConverter do
   use Bunch
   use Membrane.Filter
 
-  alias Membrane.Caps.Video.Raw
+  alias Membrane.RawVideo
 
   require Membrane.Logger
 
@@ -21,12 +21,13 @@ defmodule Membrane.FramerateConverter do
                 """
               ]
 
-  def_output_pad :output,
-    caps: {Raw, aligned: true}
-
   def_input_pad :input,
-    caps: {Raw, aligned: true},
-    demand_unit: :buffers
+    caps: {RawVideo, aligned: true},
+    demand_mode: :auto
+
+  def_output_pad :output,
+    caps: {RawVideo, aligned: true},
+    demand_mode: :auto
 
   @impl true
   def handle_init(%__MODULE__{} = options) do
@@ -44,11 +45,6 @@ defmodule Membrane.FramerateConverter do
   end
 
   @impl true
-  def handle_demand(:output, size, :buffers, _ctx, state) do
-    {{:ok, demand: {:input, size}}, state}
-  end
-
-  @impl true
   def handle_process(
         :input,
         buffer,
@@ -58,17 +54,17 @@ defmodule Membrane.FramerateConverter do
     state = put_first_buffer(buffer, state)
     state = bump_target_pts(state)
 
-    {{:ok, buffer: {:output, buffer}, redemand: :output}, state}
+    {{:ok, buffer: {:output, buffer}}, state}
   end
 
   @impl true
   def handle_process(:input, buffer, _ctx, state) do
     {buffers, state} = create_new_frames(buffer, state)
-    {{:ok, [buffer: {:output, buffers}, redemand: :output]}, state}
+    {{:ok, [buffer: {:output, buffers}]}, state}
   end
 
   @impl true
-  def handle_caps(:input, caps, _context, %{framerate: framerate} = state) do
+  def handle_caps(:input, %RawVideo{} = caps, _context, %{framerate: framerate} = state) do
     state = %{state | input_framerate: caps.framerate}
 
     {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
