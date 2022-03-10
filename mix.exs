@@ -63,6 +63,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
     [
       main: "readme",
       extras: ["README.md", "LICENSE"],
+      formatters: ["html"],
       source_ref: "v#{@version}",
       nest_modules_by_prefix: [Membrane.FramerateConverter]
     ]
