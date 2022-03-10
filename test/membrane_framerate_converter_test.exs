@@ -136,7 +136,7 @@ defmodule Membrane.FramerateConverterTest do
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
         expected_pts = i |> Ratio.mult(target_frame_duration) |> Ratio.floor()
-        assert_sink_buffer(pid, :sink, %Membrane.Buffer{metadata: metadata, pts: pts})
+        assert_sink_buffer(pid, :sink, %Membrane.Buffer{pts: pts})
         assert expected_pts == pts
       end)
 
