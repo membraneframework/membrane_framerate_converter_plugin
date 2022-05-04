@@ -62,9 +62,8 @@ defmodule Membrane.FramerateConverterTest do
       pipeline_options = %Pipeline.Options{elements: elements}
       assert {:ok, pid} = Pipeline.start_link(pipeline_options)
 
-      assert Pipeline.play(pid) == :ok
       assert_end_of_stream(pid, :sink, :input, 2_000)
-      Pipeline.stop_and_terminate(pid, blocking?: true)
+      Pipeline.terminate(pid, blocking?: true)
     end
 
     defp perform_fps_test(output_filename, target_frame_count, target_framerate) do
@@ -131,7 +130,6 @@ defmodule Membrane.FramerateConverterTest do
       }
 
       assert {:ok, pid} = Pipeline.start_link(pipeline)
-      assert Pipeline.play(pid) == :ok
 
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
@@ -140,7 +138,7 @@ defmodule Membrane.FramerateConverterTest do
         assert expected_pts == pts
       end)
 
-      Testing.Pipeline.stop_and_terminate(pid, blocking?: true)
+      Testing.Pipeline.terminate(pid, blocking?: true)
     end
   end
 end
