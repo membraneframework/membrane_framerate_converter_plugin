@@ -9,9 +9,9 @@ defmodule Membrane.FramerateConverter do
   use Bunch
   use Membrane.Filter
 
-  alias Membrane.RawVideo
-
   require Membrane.Logger
+
+  alias Membrane.RawVideo
 
   def_options framerate: [
                 spec: {pos_integer(), pos_integer()},

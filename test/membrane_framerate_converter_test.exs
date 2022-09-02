@@ -8,12 +8,12 @@ defmodule Membrane.FramerateConverterTest do
 
   import Membrane.Testing.Assertions
 
+  require Membrane.Logger
+
   alias Membrane.File.{Sink, Source}
   alias Membrane.H264.FFmpeg.{Decoder, Encoder, Parser}
   alias Membrane.Testing
   alias Membrane.Testing.Pipeline
-
-  require Membrane.Logger
 
   @fps_test_file Path.expand("fixtures/testsrc_5_fps.h264", __DIR__)
   @timestamp_test_file Path.expand("fixtures/10-720p.h264", __DIR__)
