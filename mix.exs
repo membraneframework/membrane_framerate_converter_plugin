@@ -12,6 +12,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      dialyzer: dialyzer(),
 
       # hex
       description: "Plugin for converting framerate of raw video",
@@ -20,7 +21,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
       # docs
       name: "Membrane Framerate Converter plugin",
       source_url: @github_url,
-      homepage_url: "https://membraneframework.org",
+      homepage_url: "https://membrane.stream",
       docs: docs()
     ]
   end
@@ -46,6 +47,19 @@ defmodule Membrane.FramerateConverter.Mixfile do
       {:membrane_file_plugin, "~> 0.8", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.18", only: :test}
     ]
+  end
+
+  defp dialyzer() do
+    opts = [
+      flags: [:error_handling]
+    ]
+
+    if System.get_env("CI") == "true" do
+      # Store PLTs in cacheable directory for CI
+      [plt_local_path: "priv/plts", plt_core_path: "priv/plts"] ++ opts
+    else
+      opts
+    end
   end
 
   defp package do
