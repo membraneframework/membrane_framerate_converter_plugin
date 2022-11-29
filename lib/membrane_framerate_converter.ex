@@ -66,9 +66,8 @@ defmodule Membrane.FramerateConverter do
 
   @impl true
   def handle_caps(:input, %RawVideo{} = caps, _context, %{framerate: framerate} = state) do
-    state = %{state | input_framerate: caps.framerate}
-
-    {{:ok, caps: {:output, %{caps | framerate: framerate}}}, %{state | caps_changed?: true}}
+    state = %{state | caps_changed?: true, input_framerate: caps.framerate}
+    {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
   end
 
   @impl true
@@ -120,7 +119,9 @@ defmodule Membrane.FramerateConverter do
       state
       | target_pts: first_buffer.pts,
         exact_target_pts: first_buffer.pts,
-        last_buffer: first_buffer
+        last_buffer: first_buffer,
+        # current buffer matches changed caps
+        caps_changed?: false
     }
   end
 
@@ -141,6 +142,7 @@ defmodule Membrane.FramerateConverter do
       dist_right = input_buffer.pts - state.target_pts
       dist_left = state.target_pts - last_buffer.pts
 
+      # If caps have changed, use only the new buffer
       new_buffer =
         if dist_left >= dist_right or state.caps_changed? do
           %{input_buffer | pts: state.target_pts}
