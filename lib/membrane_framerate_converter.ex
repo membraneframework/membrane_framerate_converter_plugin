@@ -38,7 +38,8 @@ defmodule Membrane.FramerateConverter do
         last_buffer: nil,
         input_framerate: {0, 1},
         target_pts: 0,
-        exact_target_pts: 0
+        exact_target_pts: 0,
+        caps_changed?: false
       })
 
     {:ok, state}
@@ -65,8 +66,7 @@ defmodule Membrane.FramerateConverter do
 
   @impl true
   def handle_caps(:input, %RawVideo{} = caps, _context, %{framerate: framerate} = state) do
-    state = %{state | input_framerate: caps.framerate}
-
+    state = %{state | caps_changed?: true, input_framerate: caps.framerate}
     {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
   end
 
@@ -119,7 +119,9 @@ defmodule Membrane.FramerateConverter do
       state
       | target_pts: first_buffer.pts,
         exact_target_pts: first_buffer.pts,
-        last_buffer: first_buffer
+        last_buffer: first_buffer,
+        # current buffer matches changed caps
+        caps_changed?: false
     }
   end
 
@@ -134,17 +136,18 @@ defmodule Membrane.FramerateConverter do
     if state.target_pts > input_buffer.pts do
       state = %{state | last_buffer: input_buffer}
 
-      {Enum.reverse(buffers), state}
+      {Enum.reverse(buffers), %{state | caps_changed?: false}}
     else
       last_buffer = state.last_buffer
       dist_right = input_buffer.pts - state.target_pts
       dist_left = state.target_pts - last_buffer.pts
 
+      # If caps have changed, use only the new buffer
       new_buffer =
-        if dist_left <= dist_right do
-          %{last_buffer | pts: state.target_pts}
-        else
+        if dist_left >= dist_right or state.caps_changed? do
           %{input_buffer | pts: state.target_pts}
+        else
+          %{last_buffer | pts: state.target_pts}
         end
 
       state = bump_target_pts(state)
