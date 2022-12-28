@@ -22,15 +22,15 @@ defmodule Membrane.FramerateConverter do
               ]
 
   def_input_pad :input,
-    caps: {RawVideo, aligned: true},
+    accepted_format: %RawVideo{aligned: true},
     demand_mode: :auto
 
   def_output_pad :output,
-    caps: {RawVideo, aligned: true},
+    accepted_format: %RawVideo{aligned: true},
     demand_mode: :auto
 
   @impl true
-  def handle_init(%__MODULE__{} = options) do
+  def handle_init(_ctx, %__MODULE__{} = options) do
     state =
       options
       |> Map.from_struct()
@@ -42,7 +42,7 @@ defmodule Membrane.FramerateConverter do
         caps_changed?: false
       })
 
-    {:ok, state}
+    {[], state}
   end
 
   @impl true
@@ -55,28 +55,33 @@ defmodule Membrane.FramerateConverter do
     state = put_first_buffer(buffer, state)
     state = bump_target_pts(state)
 
-    {{:ok, buffer: {:output, buffer}}, state}
+    {[buffer: {:output, buffer}], state}
   end
 
   @impl true
   def handle_process(:input, buffer, _ctx, state) do
     {buffers, state} = create_new_frames(buffer, state)
-    {{:ok, [buffer: {:output, buffers}]}, state}
+    {[[buffer: {:output, buffers}]], state}
   end
 
   @impl true
-  def handle_caps(:input, %RawVideo{} = caps, _context, %{framerate: framerate} = state) do
-    state = %{state | caps_changed?: true, input_framerate: caps.framerate}
-    {{:ok, caps: {:output, %{caps | framerate: framerate}}}, state}
+  def handle_stream_format(
+        :input,
+        %RawVideo{} = stream_format,
+        _context,
+        %{framerate: framerate} = state
+      ) do
+    state = %{state | stream_format_changed?: true, input_framerate: stream_format.framerate}
+    {[stream_format: {:output, %{stream_format | framerate: framerate}}], state}
   end
 
   @impl true
   def handle_end_of_stream(:input, _ctx, %{input_framerate: {0, _denom}} = state) do
-    {{:ok, end_of_stream: :output}, state}
+    {[end_of_stream: :output], state}
   end
 
   def handle_end_of_stream(:input, _ctx, %{last_buffer: nil} = state) do
-    {{:ok, end_of_stream: :output}, state}
+    {[end_of_stream: :output], state}
   end
 
   def handle_end_of_stream(
@@ -97,7 +102,7 @@ defmodule Membrane.FramerateConverter do
     # That means that last timestamp must not be greater than `input_video_duration - output_frame_duration/2`
     best_last_timestamp = Ratio.floor(input_video_duration - output_frame_duration / 2)
     buffers = fill_to_last_timestamp(best_last_timestamp, state)
-    {{:ok, [buffer: {:output, buffers}, end_of_stream: :output]}, state}
+    {[[buffer: {:output, buffers}, end_of_stream: :output]], state}
   end
 
   defp get_frame_duration({num, denom}) do
