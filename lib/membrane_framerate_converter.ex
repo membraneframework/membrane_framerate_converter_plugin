@@ -61,7 +61,7 @@ defmodule Membrane.FramerateConverter do
   @impl true
   def handle_process(:input, buffer, _ctx, state) do
     {buffers, state} = create_new_frames(buffer, state)
-    {[[buffer: {:output, buffers}]], state}
+    {[buffer: {:output, buffers}], state}
   end
 
   @impl true
@@ -71,7 +71,7 @@ defmodule Membrane.FramerateConverter do
         _context,
         %{framerate: framerate} = state
       ) do
-    state = %{state | stream_format_changed?: true, input_framerate: stream_format.framerate}
+    state = %{state | caps_changed?: true, input_framerate: stream_format.framerate}
     {[stream_format: {:output, %{stream_format | framerate: framerate}}], state}
   end
 
@@ -102,7 +102,7 @@ defmodule Membrane.FramerateConverter do
     # That means that last timestamp must not be greater than `input_video_duration - output_frame_duration/2`
     best_last_timestamp = Ratio.floor(input_video_duration - output_frame_duration / 2)
     buffers = fill_to_last_timestamp(best_last_timestamp, state)
-    {[[buffer: {:output, buffers}, end_of_stream: :output]], state}
+    {[buffer: {:output, buffers}, end_of_stream: :output], state}
   end
 
   defp get_frame_duration({num, denom}) do
