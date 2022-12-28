@@ -37,15 +37,15 @@ defmodule Membrane.FramerateConverter.Mixfile do
 
   defp deps do
     [
-      {:membrane_core, "~> 0.10.0"},
+      {:membrane_core, "~> 0.11.2"},
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:bunch, "~> 1.3"},
       {:ratio, "~> 2.4.2"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: :dev, runtime: false},
-      {:membrane_file_plugin, "~> 0.8", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.18", only: :test}
+      {:membrane_file_plugin, "~> 0.13", only: :test},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.22", only: :test}
     ]
   end
 
