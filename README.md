@@ -46,7 +46,7 @@ defmodule Pipeline do
         |> child(encoder: Encoder)
         |> child(sink: %Sink{location: "output.h264"})
 
-    {[structure: structure], %{}}
+    {[spec: structure], %{}}
   end
 end
 ```
