@@ -6,6 +6,7 @@ defmodule Membrane.FramerateConverterTest do
   use ExUnit.Case
   use Membrane.Pipeline
 
+  import Membrane.ChildrenSpec
   import Membrane.Testing.Assertions
 
   require Membrane.Logger
@@ -58,27 +59,24 @@ defmodule Membrane.FramerateConverterTest do
   end
 
   describe "FramerateConverter should" do
-    defp perform_general_test(elements) do
-      pipeline_options = %Pipeline.Options{elements: elements}
-      assert {:ok, pid} = Pipeline.start_link(pipeline_options)
+    defp perform_general_test(structure) do
+      assert pipeline = Pipeline.start_link_supervised!(structure: structure)
 
-      assert_end_of_stream(pid, :sink, :input, 2_000)
-      Pipeline.terminate(pid, blocking?: true)
+      assert_end_of_stream(pipeline, :sink, :input, 2_000)
     end
 
     defp perform_fps_test(output_filename, target_frame_count, target_framerate) do
       output_path = prepare_output(output_filename)
 
-      elements = [
-        file: %Source{chunk_size: 40_960, location: @fps_test_file},
-        parser: %Parser{framerate: @fps_file_framerate},
-        decoder: Decoder,
-        converter: %Membrane.FramerateConverter{framerate: target_framerate},
-        encoder: Encoder,
-        sink: %Sink{location: output_path}
-      ]
+      structure =
+        child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
+        |> child(:parser, %Parser{framerate: @fps_file_framerate})
+        |> child(:decoder, Decoder)
+        |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
+        |> child(:encoder, Encoder)
+        |> child(:sink, %Sink{location: output_path})
 
-      perform_general_test(elements)
+      perform_general_test(structure)
       output_frames = count_frames(output_path)
       assert output_frames == target_frame_count
     end
@@ -86,16 +84,15 @@ defmodule Membrane.FramerateConverterTest do
     test "convert video with given pts" do
       output_path = prepare_output("out.h264")
 
-      elements = [
-        file: %Source{chunk_size: 40_960, location: @fps_test_file},
-        parser: %Parser{framerate: @fps_file_framerate},
-        decoder: Decoder,
-        converter: %Membrane.FramerateConverter{framerate: {30_000, 1001}},
-        encoder: Encoder,
-        sink: %Sink{location: output_path}
-      ]
+      structure =
+        child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
+        |> child(:parser, %Parser{framerate: @fps_file_framerate})
+        |> child(:decoder, Decoder)
+        |> child(:converter, %Membrane.FramerateConverter{framerate: {30_000, 1001}})
+        |> child(:encoder, Encoder)
+        |> child(:sink, %Sink{location: output_path})
 
-      perform_general_test(elements)
+      perform_general_test(structure)
     end
 
     test "convert video to the lower frame rate correctly" do
@@ -119,26 +116,22 @@ defmodule Membrane.FramerateConverterTest do
       target_frame_count = 5
       target_frame_duration = Ratio.div(Membrane.Time.second(), 15)
 
-      pipeline = %Pipeline.Options{
-        elements: [
-          file: %Source{chunk_size: 40_960, location: @timestamp_test_file},
-          parser: %Parser{framerate: @timestamp_file_framerate},
-          decoder: Decoder,
-          converter: %Membrane.FramerateConverter{framerate: target_framerate},
-          sink: Testing.Sink
-        ]
-      }
+      structure = [
+        child(:file, %Source{chunk_size: 40_960, location: @timestamp_test_file})
+        |> child(:parser, %Parser{framerate: @timestamp_file_framerate})
+        |> child(:decoder, Decoder)
+        |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
+        |> child(:sink, Testing.Sink)
+      ]
 
-      assert {:ok, pid} = Pipeline.start_link(pipeline)
+      assert pipeline = Pipeline.start_link_supervised!(structure: structure)
 
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
         expected_pts = i |> Ratio.mult(target_frame_duration) |> Ratio.floor()
-        assert_sink_buffer(pid, :sink, %Membrane.Buffer{pts: pts})
+        assert_sink_buffer(pipeline, :sink, %Membrane.Buffer{pts: pts})
         assert expected_pts == pts
       end)
-
-      Testing.Pipeline.terminate(pid, blocking?: true)
     end
   end
 end

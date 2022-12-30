@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_framerate_converter_plugin` to 
 ```elixir
 def deps do
   [
-    {:membrane_framerate_converter_plugin, "~> 0.5.1"}
+    {:membrane_framerate_converter_plugin, "~> 0.6.0"}
   ]
 end
 ```
@@ -37,25 +37,16 @@ defmodule Pipeline do
   alias Membrane.File.{Sink, Source}
 
   @impl true
-  def handle_init(filename) do
-    children = %{
-        file: %Source{chunk_size: 40_960, location: filename},
-        parser: %Parser{framerate: {10, 1}},
-        decoder: Decoder,
-        converter: %Membrane.FramerateConverter{framerate: {2, 1}},
-        encoder: Encoder,
-        sink: %Sink{location: "output.h264"}
-    }
+  def handle_init(_ctx, filename) do
+    structure =
+        child(file: %Source{chunk_size: 40_960, location: filename})
+        |> child(parser: %Parser{framerate: {10, 1}})
+        |> child(decoder: Decoder)
+        |> child(converter: %Membrane.FramerateConverter{framerate: {2, 1}})
+        |> child(encoder: Encoder)
+        |> child(sink: %Sink{location: "output.h264"})
 
-      links = [
-        link(:file)
-        |> to(:parser)
-        |> to(:decoder)
-        |> to(:converter)
-        |> to(:encoder)
-        |> to(:sink)
-      ]
-    {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}
+    {[spec: structure], %{}}
   end
 end
 ```
