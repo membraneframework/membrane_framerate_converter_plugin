@@ -1,7 +1,7 @@
 defmodule Membrane.FramerateConverter.Mixfile do
   use Mix.Project
 
-  @version "0.6.0"
+  @version "0.6.1"
   @github_url "https://github.com/membraneframework/membrane_framerate_converter_plugin"
 
   def project do
@@ -38,14 +38,14 @@ defmodule Membrane.FramerateConverter.Mixfile do
   defp deps do
     [
       {:membrane_core, "~> 0.11.2"},
-      {:membrane_raw_video_format, "~> 0.2.0"},
+      {:membrane_raw_video_format, "~> 0.3.0"},
       {:bunch, "~> 1.3"},
       {:ratio, "~> 2.4.2"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: :dev, runtime: false},
       {:membrane_file_plugin, "~> 0.13", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.22", only: :test}
+      {:membrane_h264_ffmpeg_plugin, "~> 0.26.2", only: :test}
     ]
   end
 
