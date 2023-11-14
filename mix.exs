@@ -40,12 +40,13 @@ defmodule Membrane.FramerateConverter.Mixfile do
       {:membrane_core, "~> 1.0"},
       {:membrane_raw_video_format, "~> 0.3.0"},
       {:bunch, "~> 1.3"},
-      {:ratio, "~> 2.4.2"},
+      {:ratio, "~> 3.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: :dev, runtime: false},
-      {:membrane_file_plugin, "~> 0.13", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0", only: :test}
+      {:membrane_file_plugin, "~> 0.16.0", only: :test},
+      {:membrane_h264_plugin, "~> 0.9.0", only: :test},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.31.0", only: :test}
     ]
   end
 

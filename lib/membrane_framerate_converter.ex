@@ -21,13 +21,9 @@ defmodule Membrane.FramerateConverter do
                 """
               ]
 
-  def_input_pad :input,
-    accepted_format: %RawVideo{aligned: true},
-    demand_mode: :auto
+  def_input_pad :input,    accepted_format: %RawVideo{aligned: true}
 
-  def_output_pad :output,
-    accepted_format: %RawVideo{aligned: true},
-    demand_mode: :auto
+  def_output_pad :output,    accepted_format: %RawVideo{aligned: true}
 
   @impl true
   def handle_init(_ctx, %__MODULE__{} = options) do
@@ -46,7 +42,7 @@ defmodule Membrane.FramerateConverter do
   end
 
   @impl true
-  def handle_process(
+  def handle_buffer(
         :input,
         buffer,
         _ctx,
@@ -59,7 +55,7 @@ defmodule Membrane.FramerateConverter do
   end
 
   @impl true
-  def handle_process(:input, buffer, _ctx, state) do
+  def handle_buffer(:input, buffer, _ctx, state) do
     {buffers, state} = create_new_frames(buffer, state)
     {[buffer: {:output, buffers}], state}
   end
@@ -89,7 +85,8 @@ defmodule Membrane.FramerateConverter do
         _ctx,
         %{last_buffer: last_buffer} = state
       ) do
-    use Ratio
+    use Numbers, overload_operators: true
+
     input_frame_duration = get_frame_duration(state.input_framerate)
     output_frame_duration = get_frame_duration(state.framerate)
     input_video_duration = last_buffer.pts + input_frame_duration
@@ -131,7 +128,7 @@ defmodule Membrane.FramerateConverter do
   end
 
   defp bump_target_pts(%{exact_target_pts: exact_pts, framerate: framerate} = state) do
-    use Ratio
+    use Numbers, overload_operators: true
     next_exact_pts = exact_pts + get_frame_duration(framerate)
     next_target_pts = Ratio.floor(next_exact_pts)
     %{state | target_pts: next_target_pts, exact_target_pts: next_exact_pts}
