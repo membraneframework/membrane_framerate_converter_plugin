@@ -21,9 +21,9 @@ defmodule Membrane.FramerateConverter do
                 """
               ]
 
-  def_input_pad :input,    accepted_format: %RawVideo{aligned: true}
+  def_input_pad :input, accepted_format: %RawVideo{aligned: true}
 
-  def_output_pad :output,    accepted_format: %RawVideo{aligned: true}
+  def_output_pad :output, accepted_format: %RawVideo{aligned: true}
 
   @impl true
   def handle_init(_ctx, %__MODULE__{} = options) do

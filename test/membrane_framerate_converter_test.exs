@@ -72,7 +72,9 @@ defmodule Membrane.FramerateConverterTest do
 
       structure =
         child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
-        |> child(:parser, %Parser{generate_best_effort_timestamps: %{framerate: @fps_file_framerate}})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @fps_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
         |> child(:encoder, Encoder)
@@ -88,7 +90,9 @@ defmodule Membrane.FramerateConverterTest do
 
       structure =
         child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
-        |> child(:parser, %Parser{generate_best_effort_timestamps: %{framerate: @fps_file_framerate}})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @fps_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: {30_000, 1001}})
         |> child(:encoder, Encoder)
@@ -120,7 +124,9 @@ defmodule Membrane.FramerateConverterTest do
 
       structure = [
         child(:file, %Source{chunk_size: 40_960, location: @timestamp_test_file})
-        |> child(:parser, %Parser{generate_best_effort_timestamps: %{framerate: @timestamp_file_framerate}})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @timestamp_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
         |> child(:sink, Testing.Sink)
