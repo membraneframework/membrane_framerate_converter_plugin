@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_framerate_converter_plugin` to 
 ```elixir
 def deps do
   [
-    {:membrane_framerate_converter_plugin, "~> 0.7.0"}
+    {:membrane_framerate_converter_plugin, "~> 0.8.0"}
   ]
 end
 ```
@@ -33,14 +33,15 @@ Example converting h264 video from 10 to 2 fps.
 defmodule Pipeline do
   use Membrane.Pipeline
 
-  alias Membrane.H264.FFmpeg.{Parser, Decoder, Encoder}
+  alias Membrane.H264.FFmpeg.{Decoder, Encoder}
+  alias Membrane.H264.Parser
   alias Membrane.File.{Sink, Source}
 
   @impl true
   def handle_init(_ctx, filename) do
     structure =
         child(file: %Source{chunk_size: 40_960, location: filename})
-        |> child(parser: %Parser{framerate: {10, 1}})
+        |> child(parser: %Parser{generate_best_effort_timestamps: %{framerate: {10, 1}}})
         |> child(decoder: Decoder)
         |> child(converter: %Membrane.FramerateConverter{framerate: {2, 1}})
         |> child(encoder: Encoder)

@@ -12,7 +12,8 @@ defmodule Membrane.FramerateConverterTest do
   require Membrane.Logger
 
   alias Membrane.File.{Sink, Source}
-  alias Membrane.H264.FFmpeg.{Decoder, Encoder, Parser}
+  alias Membrane.H264.FFmpeg.{Decoder, Encoder}
+  alias Membrane.H264.Parser
   alias Membrane.Testing
   alias Membrane.Testing.Pipeline
 
@@ -60,9 +61,10 @@ defmodule Membrane.FramerateConverterTest do
 
   describe "FramerateConverter should" do
     defp perform_general_test(structure) do
-      assert pipeline = Pipeline.start_link_supervised!(structure: structure)
+      assert pipeline = Pipeline.start_link_supervised!(spec: structure)
 
       assert_end_of_stream(pipeline, :sink, :input, 2_000)
+      Pipeline.terminate(pipeline)
     end
 
     defp perform_fps_test(output_filename, target_frame_count, target_framerate) do
@@ -70,7 +72,9 @@ defmodule Membrane.FramerateConverterTest do
 
       structure =
         child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
-        |> child(:parser, %Parser{framerate: @fps_file_framerate})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @fps_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
         |> child(:encoder, Encoder)
@@ -86,7 +90,9 @@ defmodule Membrane.FramerateConverterTest do
 
       structure =
         child(:file, %Source{chunk_size: 40_960, location: @fps_test_file})
-        |> child(:parser, %Parser{framerate: @fps_file_framerate})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @fps_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: {30_000, 1001}})
         |> child(:encoder, Encoder)
@@ -114,24 +120,28 @@ defmodule Membrane.FramerateConverterTest do
     test "append correct timestamps" do
       target_framerate = {15, 1}
       target_frame_count = 5
-      target_frame_duration = Ratio.div(Membrane.Time.second(), 15)
+      target_frame_duration = Numbers.div(Membrane.Time.second(), 15)
 
       structure = [
         child(:file, %Source{chunk_size: 40_960, location: @timestamp_test_file})
-        |> child(:parser, %Parser{framerate: @timestamp_file_framerate})
+        |> child(:parser, %Parser{
+          generate_best_effort_timestamps: %{framerate: @timestamp_file_framerate}
+        })
         |> child(:decoder, Decoder)
         |> child(:converter, %Membrane.FramerateConverter{framerate: target_framerate})
         |> child(:sink, Testing.Sink)
       ]
 
-      assert pipeline = Pipeline.start_link_supervised!(structure: structure)
+      assert pipeline = Pipeline.start_link_supervised!(spec: structure)
 
       0..(target_frame_count - 1)
       |> Enum.each(fn i ->
-        expected_pts = i |> Ratio.mult(target_frame_duration) |> Ratio.floor()
+        expected_pts = i |> Numbers.mult(target_frame_duration) |> Ratio.floor()
         assert_sink_buffer(pipeline, :sink, %Membrane.Buffer{pts: pts})
         assert expected_pts == pts
       end)
+
+      Pipeline.terminate(pipeline)
     end
   end
 end
