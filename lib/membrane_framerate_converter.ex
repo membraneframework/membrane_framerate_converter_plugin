@@ -67,7 +67,12 @@ defmodule Membrane.FramerateConverter do
         _context,
         %{framerate: framerate} = state
       ) do
-    state = %{state | caps_changed?: true, input_framerate: stream_format.framerate || state.input_framerate}
+    state = %{
+      state
+      | caps_changed?: true,
+        input_framerate: stream_format.framerate || state.input_framerate
+    }
+
     {[stream_format: {:output, %{stream_format | framerate: framerate}}], state}
   end
 
