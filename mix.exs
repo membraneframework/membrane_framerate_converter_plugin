@@ -1,7 +1,7 @@
 defmodule Membrane.FramerateConverter.Mixfile do
   use Mix.Project
 
-  @version "0.8.3"
+  @version "0.8.4"
   @github_url "https://github.com/membraneframework/membrane_framerate_converter_plugin"
 
   def project do
@@ -15,14 +15,15 @@ defmodule Membrane.FramerateConverter.Mixfile do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Plugin for converting framerate of raw video",
+      description: "Converts video to a constant framerate by dropping/duplicating frames.",
       package: package(),
 
       # docs
       name: "Membrane Framerate Converter plugin",
       source_url: @github_url,
       homepage_url: "https://membrane.stream",
-      docs: docs()
+      docs: docs(),
+      aliases: [docs: ["docs", &prepend_llms_links/1]]
     ]
   end
 
@@ -40,7 +41,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
       {:membrane_core, "~> 1.0"},
       {:membrane_raw_video_format, "~> 0.4.0"},
       {:bunch, "~> 1.3"},
-      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: :dev, runtime: false},
       {:membrane_file_plugin, "~> 0.17.0", only: :test},
@@ -77,9 +78,30 @@ defmodule Membrane.FramerateConverter.Mixfile do
     [
       main: "readme",
       extras: ["README.md", "LICENSE"],
-      formatters: ["html"],
       source_ref: "v#{@version}",
       nest_modules_by_prefix: [Membrane.FramerateConverter]
     ]
+  end
+
+  defp prepend_llms_links(_) do
+    output_dir = docs()[:output] || "doc"
+    path = Path.join(output_dir, "llms.txt")
+
+    if File.exists?(path) do
+      existing = File.read!(path)
+
+      footer = """
+
+
+      ## See Also
+
+      - [Membrane Framework AI Skill](https://hexdocs.pm/membrane_core/skill.md)
+      - [Membrane Core](https://hexdocs.pm/membrane_core/llms.txt)
+      """
+
+      File.write!(path, String.trim_trailing(existing) <> footer)
+    else
+      IO.warn("#{path} not found — llms.txt was not generated, check your ex_doc configuration")
+    end
   end
 end
