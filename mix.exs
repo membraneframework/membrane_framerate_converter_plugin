@@ -40,9 +40,9 @@ defmodule Membrane.FramerateConverter.Mixfile do
       {:membrane_core, "~> 1.0"},
       {:membrane_raw_video_format, "~> 0.4.0"},
       {:bunch, "~> 1.3"},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.4", only: :dev, runtime: false},
-      {:credo, "~> 1.7", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
       {:membrane_file_plugin, "~> 0.17.0", only: :test},
       {:membrane_h26x_plugin, "~> 0.10.0", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.32.0", only: :test}
@@ -51,8 +51,7 @@ defmodule Membrane.FramerateConverter.Mixfile do
 
   defp dialyzer() do
     opts = [
-      flags: [:error_handling],
-      plt_add_apps: [:syntax_tools]
+      flags: [:error_handling]
     ]
 
     if System.get_env("CI") == "true" do
